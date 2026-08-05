@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    color-scheme: dark;
+}
+
+@layer components {
+    /* Items inside RowActions dropdown menus */
+    .menu-item {
+        @apply block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#2e2e34] hover:text-white transition-colors;
+    }
+    .menu-item-danger {
+        @apply block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors;
+    }
+    .menu-divider {
+        @apply my-1 border-t border-[#34343b];
+    }
+}
+
+body {
+    background-color: #141414;
+    color: #e2e8ee;
+}
+
+/* Dark page bg behind focus-ring offsets instead of default white halos */
+*,
+::before,
+::after {
+    --tw-ring-offset-color: #141414;
+}
+
+/* `white` is one token with two roles: bg-white surfaces must darken while
+   text-white on buttons stays white — so bg-white is overridden here, after
+   the utilities layer, instead of remapped in tailwind.config.js. */
+.bg-white {
+    background-color: #1e1e1e;
+}
+.hover\:bg-white:hover {
+    background-color: #1e1e1e;
+}
+.focus\:bg-white:focus {
+    background-color: #26262b;
+}
