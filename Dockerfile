@@ -7,6 +7,8 @@ RUN npm ci && npm run build
 # --- app ---
 FROM dunglas/frankenphp:1-php8.3
 RUN install-php-extensions pdo_pgsql intl zip gd bcmath opcache
+# Render's sandbox refuses to exec a binary with file capabilities; we bind a high port so we don't need them
+RUN setcap -r "$(command -v frankenphp)" || true
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . .
