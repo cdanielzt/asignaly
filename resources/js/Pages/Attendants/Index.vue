@@ -14,10 +14,30 @@
             </button>
         </div>
 
+        <ListToolbar
+            v-if="attendants.length"
+            v-model:search="search"
+            v-model:filter="filterRole"
+            v-model:sort="sortBy"
+            search-placeholder="Buscar hermanos…"
+            filter-all-label="Todas las funciones"
+            :filter-options="roles.map(r => ({ value: r, label: roleLabel(r) }))"
+            :sort-options="[
+                { value: 'name_asc',  label: 'Nombre A–Z' },
+                { value: 'name_desc', label: 'Nombre Z–A' },
+            ]"
+        />
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
+            <!-- No results for current search/filter -->
+            <div v-if="attendants.length && !filteredAttendants.length" class="py-12 text-center">
+                <p class="text-gray-500 font-medium text-sm">Sin resultados</p>
+                <p class="text-gray-400 text-xs mt-1">Prueba con otra búsqueda o filtro.</p>
+            </div>
+
             <!-- Mobile card list (tap row = edit) -->
-            <ul v-if="attendants.length" class="md:hidden divide-y divide-gray-50">
-                <li v-for="attendant in attendants" :key="attendant.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
+            <ul v-if="filteredAttendants.length" class="md:hidden divide-y divide-gray-50">
+                <li v-for="attendant in filteredAttendants" :key="attendant.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
                     <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="openEdit(attendant)">
                         <p class="text-base font-medium text-gray-900 truncate">{{ attendant.name }}</p>
                         <span :class="['inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium', roleBadge(attendant.role)]">
@@ -32,7 +52,7 @@
                 </li>
             </ul>
 
-            <table v-if="attendants.length" class="w-full text-sm hidden md:table">
+            <table v-if="filteredAttendants.length" class="w-full text-sm hidden md:table">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-100">
                         <th class="text-left px-6 py-3.5 font-semibold text-gray-600">Nombre</th>
@@ -41,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                    <tr v-for="attendant in attendants" :key="attendant.id" class="hover:bg-gray-50 transition-colors">
+                    <tr v-for="attendant in filteredAttendants" :key="attendant.id" class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-900">{{ attendant.name }}</td>
                         <td class="px-6 py-4">
                             <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', roleBadge(attendant.role)]">
@@ -59,7 +79,7 @@
                 </tbody>
             </table>
 
-            <div v-else class="py-16 text-center">
+            <div v-if="!attendants.length" class="py-16 text-center">
                 <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -147,15 +167,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import RowActions from '@/Components/RowActions.vue';
 import Modal from '@/Components/Modal.vue';
+import ListToolbar from '@/Components/ListToolbar.vue';
 
 const props = defineProps({
     attendants: { type: Array, default: () => [] },
     roles: { type: Array, default: () => [] },
+});
+
+// ── Search / filter / sort ───────────────────────────────────────────────────
+const search = ref('');
+const filterRole = ref('');
+const sortBy = ref('name_asc');
+
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+const filteredAttendants = computed(() => {
+    const q = norm(search.value.trim());
+    return props.attendants
+        .filter(a => (!q || norm(a.name).includes(q)) && (!filterRole.value || a.role === filterRole.value))
+        .sort((a, b) => sortBy.value === 'name_desc'
+            ? b.name.localeCompare(a.name, 'es')
+            : a.name.localeCompare(b.name, 'es'));
 });
 
 const toDelete = ref(null);

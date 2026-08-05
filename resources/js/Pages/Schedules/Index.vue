@@ -1,6 +1,6 @@
 <template>
     <AppLayout title="Acomodadores">
-        <div class="flex items-center justify-between mb-6 gap-3">
+        <div class="flex flex-wrap items-center justify-between mb-6 gap-3">
             <p class="text-sm text-gray-500">
                 {{ schedules.length }} programa{{ schedules.length !== 1 ? 's' : '' }} en total
             </p>
@@ -10,7 +10,7 @@
                     <button
                         type="button"
                         title="Vista de cuadrícula"
-                        class="w-9 h-9 flex items-center justify-center rounded-md transition-colors"
+                        class="w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-md transition-colors"
                         :class="viewMode === 'grid' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-gray-600'"
                         @click="setView('grid')"
                     >
@@ -21,7 +21,7 @@
                     <button
                         type="button"
                         title="Vista de lista"
-                        class="w-9 h-9 flex items-center justify-center rounded-md transition-colors"
+                        class="w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center rounded-md transition-colors"
                         :class="viewMode === 'list' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-gray-600'"
                         @click="setView('list')"
                     >
@@ -44,10 +44,27 @@
             </div>
         </div>
 
+        <ListToolbar
+            v-if="schedules.length"
+            v-model:search="search"
+            v-model:sort="sortBy"
+            search-placeholder="Buscar por mes o año…"
+            :sort-options="[
+                { value: 'newest', label: 'Más recientes' },
+                { value: 'oldest', label: 'Más antiguos' },
+            ]"
+        />
+
+        <!-- No results for current search -->
+        <div v-if="schedules.length && !filteredSchedules.length" class="bg-white rounded-xl shadow-sm border border-gray-100 py-12 text-center">
+            <p class="text-gray-500 font-medium text-sm">Sin resultados</p>
+            <p class="text-gray-400 text-xs mt-1">Prueba con otra búsqueda.</p>
+        </div>
+
         <!-- Grid view -->
-        <div v-if="schedules.length && viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-else-if="filteredSchedules.length && viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div
-                v-for="schedule in schedules"
+                v-for="schedule in filteredSchedules"
                 :key="schedule.id"
                 class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md hover:border-indigo-100 transition-all group cursor-pointer"
                 @click="visit(schedule)"
@@ -72,7 +89,7 @@
                 <div class="flex items-center gap-1 shrink-0" @click.stop>
                     <Link
                         :href="`/schedules/${schedule.id}`"
-                        class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors px-2 py-2"
+                        class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors px-2 py-2.5"
                     >
                         Ver
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -87,9 +104,9 @@
         </div>
 
         <!-- List view -->
-        <div v-else-if="schedules.length" class="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+        <div v-else-if="filteredSchedules.length" class="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
             <div
-                v-for="schedule in schedules"
+                v-for="schedule in filteredSchedules"
                 :key="schedule.id"
                 class="flex items-center justify-between px-4 sm:px-5 py-3 hover:bg-indigo-50/40 transition-colors cursor-pointer group"
                 @click="visit(schedule)"
@@ -106,7 +123,7 @@
                 <div class="flex items-center gap-1 shrink-0" @click.stop>
                     <Link
                         :href="`/schedules/${schedule.id}`"
-                        class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors px-2 py-2"
+                        class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors px-2 py-2.5"
                     >
                         Ver
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -210,13 +227,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import RowActions from '@/Components/RowActions.vue';
 import Modal from '@/Components/Modal.vue';
+import ListToolbar from '@/Components/ListToolbar.vue';
 
-defineProps({
+const props = defineProps({
     schedules: {
         type: Array,
         default: () => [],
@@ -231,6 +249,21 @@ const months = MONTH_ABBRS.map((_, i) => ({
 }));
 
 const viewMode = ref(localStorage.getItem('schedules.view') || 'grid');
+
+// ── Search / sort ────────────────────────────────────────────────────────────
+const search = ref('');
+const sortBy = ref('newest');
+
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+const filteredSchedules = computed(() => {
+    const q = norm(search.value.trim());
+    return props.schedules
+        .filter(s => !q || norm(`${s.name} ${months[s.month - 1].label} ${s.year}`).includes(q))
+        .sort((a, b) => sortBy.value === 'oldest'
+            ? (a.year * 12 + a.month) - (b.year * 12 + b.month)
+            : (b.year * 12 + b.month) - (a.year * 12 + a.month));
+});
 
 function setView(mode) {
     viewMode.value = mode;

@@ -14,10 +14,30 @@
             </button>
         </div>
 
+        <ListToolbar
+            v-if="students.length"
+            v-model:search="search"
+            v-model:filter="filterGender"
+            v-model:sort="sortBy"
+            search-placeholder="Buscar estudiantes…"
+            filter-all-label="Todos los géneros"
+            :filter-options="Object.entries(genders).map(([value, label]) => ({ value, label }))"
+            :sort-options="[
+                { value: 'name_asc',  label: 'Nombre A–Z' },
+                { value: 'name_desc', label: 'Nombre Z–A' },
+            ]"
+        />
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
+            <!-- No results for current search/filter -->
+            <div v-if="students.length && !filteredStudents.length" class="py-12 text-center">
+                <p class="text-gray-500 font-medium text-sm">Sin resultados</p>
+                <p class="text-gray-400 text-xs mt-1">Prueba con otra búsqueda o filtro.</p>
+            </div>
+
             <!-- Mobile card list (tap row = edit) -->
-            <ul v-if="students.length" class="md:hidden divide-y divide-gray-50">
-                <li v-for="student in students" :key="student.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
+            <ul v-if="filteredStudents.length" class="md:hidden divide-y divide-gray-50">
+                <li v-for="student in filteredStudents" :key="student.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
                     <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="openEdit(student)">
                         <p class="text-base font-medium text-gray-900 truncate">{{ student.name }}</p>
                         <span :class="['inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium', genderBadge(student.gender)]">
@@ -32,7 +52,7 @@
                 </li>
             </ul>
 
-            <table v-if="students.length" class="w-full text-sm hidden md:table">
+            <table v-if="filteredStudents.length" class="w-full text-sm hidden md:table">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-100">
                         <th class="text-left px-6 py-3.5 font-semibold text-gray-600">Nombre</th>
@@ -41,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                    <tr v-for="student in students" :key="student.id" class="hover:bg-gray-50 transition-colors">
+                    <tr v-for="student in filteredStudents" :key="student.id" class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-900">{{ student.name }}</td>
                         <td class="px-6 py-4">
                             <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', genderBadge(student.gender)]">
@@ -59,7 +79,7 @@
                 </tbody>
             </table>
 
-            <div v-else class="py-16 text-center">
+            <div v-if="!students.length" class="py-16 text-center">
                 <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l6.16-3.422A12.083 12.083 0 0112 21a12.083 12.083 0 01-6.16-10.422L12 14z" />
@@ -149,15 +169,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import RowActions from '@/Components/RowActions.vue';
 import Modal from '@/Components/Modal.vue';
+import ListToolbar from '@/Components/ListToolbar.vue';
 
 const props = defineProps({
     students: { type: Array, default: () => [] },
     genders: { type: Object, default: () => ({}) },
+});
+
+// ── Search / filter / sort ───────────────────────────────────────────────────
+const search = ref('');
+const filterGender = ref('');
+const sortBy = ref('name_asc');
+
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+const filteredStudents = computed(() => {
+    const q = norm(search.value.trim());
+    return props.students
+        .filter(s => (!q || norm(s.name).includes(q)) && (!filterGender.value || s.gender === filterGender.value))
+        .sort((a, b) => sortBy.value === 'name_desc'
+            ? b.name.localeCompare(a.name, 'es')
+            : a.name.localeCompare(b.name, 'es'));
 });
 
 const toDelete = ref(null);

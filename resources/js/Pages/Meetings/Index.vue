@@ -16,14 +16,32 @@
             </button>
         </div>
 
+        <ListToolbar
+            v-if="meetings.length"
+            v-model:search="search"
+            v-model:sort="sortBy"
+            search-placeholder="Buscar por mes o año…"
+            :sort-options="[
+                { value: 'newest', label: 'Más recientes' },
+                { value: 'oldest', label: 'Más antiguos' },
+            ]"
+        />
+
+        <!-- No results for current search -->
+        <div v-if="meetings.length && !filteredMeetings.length" class="bg-white rounded-xl shadow-sm border border-gray-100 py-12 text-center">
+            <p class="text-gray-500 font-medium text-sm">Sin resultados</p>
+            <p class="text-gray-400 text-xs mt-1">Prueba con otra búsqueda.</p>
+        </div>
+
         <!-- Meeting list -->
-        <div v-if="meetings.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-else-if="filteredMeetings.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div
-                v-for="meeting in meetings"
+                v-for="meeting in filteredMeetings"
                 :key="meeting.id"
-                class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md hover:border-indigo-100 transition-all group"
+                class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md hover:border-indigo-100 transition-all group cursor-pointer"
+                @click="visit(meeting)"
             >
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 min-w-0">
                     <!-- Calendar icon block -->
                     <div class="w-12 h-12 bg-indigo-50 rounded-lg flex flex-col items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
                         <span class="text-indigo-600 text-[10px] font-bold uppercase tracking-wide leading-none">
@@ -34,21 +52,26 @@
                         </span>
                     </div>
 
-                    <div>
-                        <p class="font-semibold text-gray-900 text-sm leading-tight">{{ meeting.name }}</p>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-gray-900 text-sm leading-tight truncate">{{ meeting.name }}</p>
                         <p class="text-xs text-gray-400 mt-0.5">Programa entre semana</p>
                     </div>
                 </div>
 
-                <Link
-                    :href="`/meetings/${meeting.id}`"
-                    class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors shrink-0"
-                >
-                    Ver
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                </Link>
+                <div class="flex items-center gap-1 shrink-0" @click.stop>
+                    <Link
+                        :href="`/meetings/${meeting.id}`"
+                        class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors px-2 py-2.5"
+                    >
+                        Ver
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </Link>
+                    <RowActions>
+                        <button type="button" class="menu-item-danger" @click="askDelete(meeting)">Eliminar</button>
+                    </RowActions>
+                </div>
             </div>
         </div>
 
@@ -117,16 +140,39 @@
                 </div>
             </form>
         </Modal>
+
+        <!-- Delete confirmation -->
+        <Modal :show="!!deleting" title="Eliminar programa" @close="deleting = null">
+            <p class="text-sm text-gray-300 -mt-1">
+                ¿Eliminar el programa de <span class="font-semibold text-white">{{ deleting?.name }}</span>?
+                Se perderán todas las asignaciones. Esta acción no se puede deshacer.
+            </p>
+            <div class="flex items-center justify-end gap-3 pt-5">
+                <button type="button" class="text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors" @click="deleting = null">
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    :disabled="deleteProcessing"
+                    class="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+                    @click="confirmDelete"
+                >
+                    {{ deleteProcessing ? 'Eliminando…' : 'Eliminar' }}
+                </button>
+            </div>
+        </Modal>
     </AppLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Modal from '@/Components/Modal.vue';
+import ListToolbar from '@/Components/ListToolbar.vue';
+import RowActions from '@/Components/RowActions.vue';
 
-defineProps({
+const props = defineProps({
     meetings: {
         type: Array,
         default: () => [],
@@ -139,6 +185,21 @@ const months = MONTH_ABBRS.map((_, i) => ({
     value: i + 1,
     label: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][i],
 }));
+
+// ── Search / sort ────────────────────────────────────────────────────────────
+const search = ref('');
+const sortBy = ref('newest');
+
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+const filteredMeetings = computed(() => {
+    const q = norm(search.value.trim());
+    return props.meetings
+        .filter(m => !q || norm(`${m.name} ${months[m.month - 1].label} ${m.year}`).includes(q))
+        .sort((a, b) => sortBy.value === 'oldest'
+            ? (a.year * 12 + a.month) - (b.year * 12 + b.month)
+            : (b.year * 12 + b.month) - (a.year * 12 + a.month));
+});
 
 const formOpen = ref(false);
 const form = useForm({ month: '', year: new Date().getFullYear() });
@@ -155,5 +216,26 @@ function submitForm() {
 
 function monthAbbr(month) {
     return MONTH_ABBRS[(month - 1)] ?? '—';
+}
+
+function visit(meeting) {
+    router.visit(`/meetings/${meeting.id}`);
+}
+
+const deleting = ref(null);
+const deleteProcessing = ref(false);
+
+function askDelete(meeting) {
+    deleting.value = meeting;
+}
+
+function confirmDelete() {
+    deleteProcessing.value = true;
+    router.delete(`/meetings/${deleting.value.id}`, {
+        onFinish: () => {
+            deleteProcessing.value = false;
+            deleting.value = null;
+        },
+    });
 }
 </script>
