@@ -19,7 +19,25 @@
         </div>
 
         <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
-            <table class="min-w-full divide-y divide-gray-100">
+            <!-- Mobile card list (tap row = edit) -->
+            <ul class="md:hidden divide-y divide-gray-50">
+                <li v-for="u in users" :key="u.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
+                    <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="openEdit(u)">
+                        <p class="text-base font-medium text-gray-900 truncate">{{ u.name }}</p>
+                        <p class="text-sm text-gray-500 truncate">{{ u.email }}</p>
+                        <span :class="u.role === 'congregation_admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'" class="inline-flex items-center mt-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium">
+                            {{ u.role === 'congregation_admin' ? 'Admin' : 'Miembro' }}
+                        </span>
+                    </button>
+                    <RowActions>
+                        <button type="button" class="menu-item" @click="openEdit(u)">Editar</button>
+                        <div class="menu-divider"></div>
+                        <button type="button" class="menu-item-danger" @click="confirmDelete(u)">Eliminar</button>
+                    </RowActions>
+                </li>
+            </ul>
+
+            <table class="min-w-full divide-y divide-gray-100 hidden md:table">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>

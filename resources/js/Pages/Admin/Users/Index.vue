@@ -1,10 +1,10 @@
 <template>
     <AdminLayout title="Usuarios">
-        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
                 <select
                     v-model="selectedCongregation"
-                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     @change="filterByCongregation"
                 >
                     <option value="">Todas las congregaciones</option>
@@ -29,7 +29,44 @@
         </div>
 
         <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
-            <table class="min-w-full divide-y divide-gray-100">
+            <!-- Mobile card list (tap row = edit) -->
+            <ul class="md:hidden divide-y divide-gray-50">
+                <li v-for="u in users" :key="u.id" class="pl-4 pr-2 py-2">
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="openEdit(u)">
+                            <p class="text-base font-medium text-gray-900 truncate">{{ u.name }}</p>
+                            <p class="text-sm text-gray-500 truncate">{{ u.email }}</p>
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span :class="roleBadgeClass(u.role)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    {{ roleLabel(u.role) }}
+                                </span>
+                                <span v-if="u.congregation" class="text-xs text-gray-400 truncate">{{ u.congregation.name }}</span>
+                            </div>
+                        </button>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button
+                                v-if="canImpersonate(u)"
+                                type="button"
+                                title="Entrar como"
+                                class="w-11 h-11 flex items-center justify-center rounded-lg text-indigo-600 active:bg-indigo-50 transition-colors"
+                                @click="impersonate(u)"
+                            >
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5a3 3 0 013 3v1" />
+                                </svg>
+                            </button>
+                            <RowActions>
+                                <button type="button" class="menu-item" @click="openEdit(u)">Editar</button>
+                                <button v-if="canImpersonate(u)" type="button" class="menu-item" @click="impersonate(u)">Entrar como</button>
+                                <div class="menu-divider"></div>
+                                <button type="button" class="menu-item-danger" @click="confirmDelete(u)">Eliminar</button>
+                            </RowActions>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+
+            <table class="min-w-full divide-y divide-gray-100 hidden md:table">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>
@@ -50,11 +87,24 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-500">{{ u.congregation?.name ?? '—' }}</td>
                         <td class="px-6 py-4 text-right">
-                            <RowActions>
-                                <button type="button" class="menu-item" @click="openEdit(u)">Editar</button>
-                                <div class="menu-divider"></div>
-                                <button type="button" class="menu-item-danger" @click="confirmDelete(u)">Eliminar</button>
-                            </RowActions>
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    v-if="canImpersonate(u)"
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md px-2.5 py-1.5 transition-colors hover:bg-indigo-600 hover:text-white hover:border-indigo-600"
+                                    @click="impersonate(u)"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5a3 3 0 013 3v1" />
+                                    </svg>
+                                    Entrar como
+                                </button>
+                                <RowActions>
+                                    <button type="button" class="menu-item" @click="openEdit(u)">Editar</button>
+                                    <div class="menu-divider"></div>
+                                    <button type="button" class="menu-item-danger" @click="confirmDelete(u)">Eliminar</button>
+                                </RowActions>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
@@ -131,7 +181,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import RowActions from '@/Components/RowActions.vue';
 import Modal from '@/Components/Modal.vue';
@@ -142,6 +192,7 @@ const props = defineProps({
     filterCongregationId:  { type: [Number, String], default: '' },
 });
 
+const currentUserId = usePage().props.auth.user?.id;
 const selectedCongregation = ref(props.filterCongregationId ?? '');
 const deleting = ref(null);
 const formOpen = ref(false);
@@ -199,6 +250,14 @@ function roleBadgeClass(role) {
         congregation_admin: 'bg-blue-100 text-blue-700',
         member:             'bg-gray-100 text-gray-700',
     }[role] ?? 'bg-gray-100 text-gray-700';
+}
+
+function canImpersonate(user) {
+    return user.id !== currentUserId && user.role !== 'super_admin';
+}
+
+function impersonate(user) {
+    router.post(`/admin/users/${user.id}/impersonate`);
 }
 
 function confirmDelete(user) {

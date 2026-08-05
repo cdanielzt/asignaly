@@ -2,7 +2,7 @@
     <div ref="root" class="relative inline-block text-left">
         <button
             type="button"
-            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-200 transition-colors"
+            class="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-200 active:bg-gray-200 transition-colors"
             title="Más opciones"
             aria-haspopup="menu"
             :aria-expanded="open"
@@ -18,7 +18,7 @@
         <div
             v-if="open"
             role="menu"
-            class="absolute right-0 top-full mt-1 z-40 min-w-[10rem] rounded-lg bg-[#26262b] border border-[#3a3a42] shadow-xl py-1"
+            class="absolute right-0 top-full mt-1 z-40 min-w-[11rem] rounded-lg bg-[#26262b] border border-[#3a3a42] shadow-xl py-1"
             @click="open = false"
         >
             <slot />

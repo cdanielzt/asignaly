@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
             ],
             'adminViewingCongregation' => $adminViewingCongregation,
+            'impersonating' => (bool) session('impersonator_id'),
             'allCongregations' => fn () => $user && $user->isSuperAdmin()
                 ? Congregation::orderBy('name')->get(['id', 'name'])
                 : null,

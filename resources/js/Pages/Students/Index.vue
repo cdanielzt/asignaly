@@ -15,7 +15,24 @@
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
-            <table v-if="students.length" class="w-full text-sm">
+            <!-- Mobile card list (tap row = edit) -->
+            <ul v-if="students.length" class="md:hidden divide-y divide-gray-50">
+                <li v-for="student in students" :key="student.id" class="flex items-center gap-2 pl-4 pr-2 py-2 active:bg-gray-50 transition-colors">
+                    <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="openEdit(student)">
+                        <p class="text-base font-medium text-gray-900 truncate">{{ student.name }}</p>
+                        <span :class="['inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-xs font-medium', genderBadge(student.gender)]">
+                            {{ genderLabel(student.gender) }}
+                        </span>
+                    </button>
+                    <RowActions>
+                        <button type="button" class="menu-item" @click="openEdit(student)">Editar</button>
+                        <div class="menu-divider"></div>
+                        <button type="button" class="menu-item-danger" @click="confirmDelete(student)">Eliminar</button>
+                    </RowActions>
+                </li>
+            </ul>
+
+            <table v-if="students.length" class="w-full text-sm hidden md:table">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-100">
                         <th class="text-left px-6 py-3.5 font-semibold text-gray-600">Nombre</th>

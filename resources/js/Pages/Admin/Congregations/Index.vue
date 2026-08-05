@@ -19,7 +19,32 @@
         </div>
 
         <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-visible">
-            <table class="min-w-full divide-y divide-gray-100">
+            <!-- Mobile card list (tap row = manage) -->
+            <ul class="md:hidden divide-y divide-gray-50">
+                <li v-for="c in congregations" :key="c.id" class="flex items-center gap-2 pl-4 pr-2 py-2">
+                    <button type="button" class="flex-1 min-w-0 text-left py-1.5" @click="switchTo(c)">
+                        <p class="text-base font-medium text-gray-900 truncate">{{ c.name }}</p>
+                        <p class="text-sm text-gray-500 truncate">
+                            {{ c.city || '—' }} · {{ c.users_count }} usuario{{ c.users_count !== 1 ? 's' : '' }} ·
+                            {{ c.attendants_count }} hermano{{ c.attendants_count !== 1 ? 's' : '' }}
+                        </p>
+                        <span class="inline-flex items-center gap-1 mt-1 text-xs font-medium text-indigo-600">
+                            Gestionar
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </span>
+                    </button>
+                    <RowActions>
+                        <Link :href="`/admin/users?congregation_id=${c.id}`" class="menu-item">Usuarios</Link>
+                        <button type="button" class="menu-item" @click="openEdit(c)">Editar</button>
+                        <div class="menu-divider"></div>
+                        <button type="button" class="menu-item-danger" @click="confirmDelete(c)">Eliminar</button>
+                    </RowActions>
+                </li>
+            </ul>
+
+            <table class="min-w-full divide-y divide-gray-100 hidden md:table">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre</th>

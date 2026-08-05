@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CongregationController as AdminCongregationContro
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttendantController;
 use App\Http\Controllers\Congregation\SettingsController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\Congregation\UserController as CongregationUserController;
 use App\Http\Controllers\MeetingAssignmentController;
 use App\Http\Controllers\MeetingController;
@@ -24,7 +25,12 @@ Route::middleware(['auth', 'role:super_admin'])
         Route::post('congregations/{congregation}/switch', [AdminCongregationController::class, 'switchTo'])->name('congregations.switch');
         Route::post('switch-back', [AdminCongregationController::class, 'switchBack'])->name('switch-back');
         Route::resource('users', AdminUserController::class)->except(['show', 'create', 'edit']);
+        Route::post('users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
     });
+
+// Leave impersonation — reachable as the impersonated (non-admin) user, so it sits outside the admin group
+Route::post('impersonate/stop', [ImpersonationController::class, 'stop'])
+    ->middleware('auth')->name('impersonate.stop');
 
 // Regular congregation app
 Route::middleware(['auth', 'set.tenant', 'role:congregation_admin,member'])

@@ -12,7 +12,7 @@
         >
             <div
                 v-if="toast.visible"
-                class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+                class="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none w-max max-w-[calc(100vw-2rem)]"
             >
                 <div
                     :class="[
@@ -30,21 +30,25 @@
             </div>
         </Transition>
 
-        <!-- ── Picker popover (portal — rendered at root level) ────────────── -->
+        <!-- ── Picker popover (desktop) / bottom sheet (mobile) ────────────── -->
         <Teleport to="body">
+            <div
+                v-if="picker.open && picker.sheet"
+                class="fixed inset-0 z-[9998] bg-black/50"
+            />
             <div
                 v-if="picker.open"
                 ref="pickerEl"
-                :style="{
-                    position: 'fixed',
-                    top: picker.y + 'px',
-                    left: picker.x + 'px',
-                    width: '280px',
-                    zIndex: 9999,
-                }"
-                class="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+                :style="picker.sheet
+                    ? { zIndex: 9999 }
+                    : { position: 'fixed', top: picker.y + 'px', left: picker.x + 'px', width: '280px', zIndex: 9999 }"
+                :class="picker.sheet
+                    ? 'fixed inset-x-0 bottom-0 rounded-t-2xl pb-safe'
+                    : 'rounded-xl'"
+                class="bg-white shadow-2xl border border-gray-200 overflow-hidden"
                 @click.stop
             >
+                <div v-if="picker.sheet" class="mx-auto mt-2.5 h-1 w-9 rounded-full bg-gray-300"></div>
                 <!-- Picker header -->
                 <div class="px-3 pt-3 pb-2 border-b border-gray-100">
                     <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -66,7 +70,7 @@
                 </div>
 
                 <!-- Catalog list -->
-                <div class="overflow-y-auto max-h-60">
+                <div class="overflow-y-auto" :class="picker.sheet ? 'max-h-[50dvh]' : 'max-h-60'">
                     <!-- Clear option -->
                     <button
                         v-if="picker.currentId !== null"
@@ -141,7 +145,7 @@
         </Teleport>
 
         <!-- ── Page header ──────────────────────────────────────────────────── -->
-        <div class="flex items-start justify-between mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8">
             <div>
                 <Link
                     href="/meetings"
@@ -160,10 +164,10 @@
             </div>
 
             <!-- PDF buttons -->
-            <div v-if="localWeeks.length" class="flex items-center gap-2 shrink-0 mt-1">
+            <div v-if="localWeeks.length" class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <button
                     type="button"
-                    class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-200 transition-colors"
+                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-200 transition-colors"
                     @click="pdfPreviewOpen = true"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -174,7 +178,7 @@
                 </button>
                 <a
                     :href="`/meetings/${meeting.id}/pdf`"
-                    class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -224,7 +228,7 @@
             <template v-for="week in (activeWeek ? [activeWeek] : [])" :key="week.id">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <!-- Week header -->
-                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div class="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <span class="block text-xs font-bold text-gray-900 uppercase tracking-wide">
                             Semana {{ week.week_number }}
@@ -253,7 +257,7 @@
 
                 <!-- Sections -->
                 <div class="divide-y divide-gray-100">
-                    <div v-for="sectionKey in sectionOrder" :key="`${week.id}-${sectionKey}`" class="px-6 py-5">
+                    <div v-for="sectionKey in sectionOrder" :key="`${week.id}-${sectionKey}`" class="px-4 sm:px-6 py-5">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                 {{ sections[sectionKey] ?? sectionKey }}
@@ -281,7 +285,7 @@
                                 <button
                                     v-if="canRemoveFrom(sectionKey)"
                                     type="button"
-                                    class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/part:opacity-100 transition-all"
+                                    class="absolute top-1 right-1 sm:top-2 sm:right-2 w-9 h-9 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
                                     title="Eliminar elemento"
                                     @click="confirmRemovePart(week, part)"
                                 >
@@ -291,7 +295,7 @@
                                 </button>
 
                                 <!-- display_only -->
-                                <div v-if="part.type === 'display_only'" class="pr-6">
+                                <div v-if="part.type === 'display_only'" class="pr-9 sm:pr-6">
                                     <p class="text-sm text-gray-800">
                                         <span class="font-medium">{{ part.title }}</span>
                                         <span v-if="part.duration" class="text-gray-400"> &mdash; {{ part.duration }}</span>
@@ -299,7 +303,7 @@
                                 </div>
 
                                 <!-- editable types -->
-                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-3 pr-6">
+                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-3 pr-9 sm:pr-6">
                                     <!-- Title / duration -->
                                     <div class="flex-1 min-w-0 flex items-center gap-2">
                                         <input
@@ -327,7 +331,7 @@
                                     </div>
 
                                     <!-- Slots -->
-                                    <div class="flex items-center gap-2 shrink-0">
+                                    <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:shrink-0">
                                         <AssignmentSlot
                                             v-for="slotDef in slotDefs(part.type)"
                                             :key="slotDef.slot"
@@ -367,14 +371,14 @@
             >
                 <div
                     v-if="pdfPreviewOpen"
-                    class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+                    class="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4"
                     @click.self="pdfPreviewOpen = false"
                 >
                     <!-- Backdrop -->
                     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="pdfPreviewOpen = false" />
 
-                    <!-- Modal panel -->
-                    <div class="relative z-10 bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-3xl" style="height: 90vh;">
+                    <!-- Modal panel (fullscreen on mobile) -->
+                    <div class="relative z-10 bg-white rounded-none sm:rounded-2xl shadow-2xl flex flex-col w-full max-w-3xl h-[100dvh] sm:h-[90vh] pb-safe sm:pb-0">
                         <!-- Header -->
                         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -528,7 +532,7 @@ const AssignmentSlot = {
             return h('button', {
                 type: 'button',
                 class: [
-                    'relative w-40 text-left rounded-lg border px-3 py-1.5 transition-colors focus:outline-none',
+                    'relative w-full sm:w-40 min-h-[48px] sm:min-h-0 text-left rounded-lg border px-3 py-1.5 transition-colors focus:outline-none',
                     slotProps.active
                         ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50'
                         : 'border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30',
@@ -749,6 +753,7 @@ const pickerSearch   = ref('');
 
 const picker = ref({
     open:         false,
+    sheet:        false,      // bottom-sheet mode on mobile
     weekId:       null,
     partId:       null,
     slot:         null,       // 'main' | 'helper'
@@ -814,6 +819,9 @@ const filteredCatalog = computed(() => {
 function openPicker(event, week, part, slotDef) {
     const assignment = part.assignments?.[slotDef.slot] ?? null;
 
+    // Bottom sheet on mobile, positioned popover on desktop
+    const sheet = window.innerWidth < 640;
+
     const cell = event.currentTarget;
     const rect = cell.getBoundingClientRect();
     const pickerHeight = 340;
@@ -832,6 +840,7 @@ function openPicker(event, week, part, slotDef) {
 
     picker.value = {
         open:         true,
+        sheet,
         weekId:       week.id,
         partId:       part.id,
         slot:         slotDef.slot,
@@ -846,7 +855,7 @@ function openPicker(event, week, part, slotDef) {
     pickerSearch.value = '';
 
     nextTick(() => {
-        pickerSearchEl.value?.focus();
+        if (!sheet) pickerSearchEl.value?.focus(); // don't pop the keyboard on mobile
         document.addEventListener('click', handleOutsideClick, { capture: true });
         document.addEventListener('keydown', handlePickerKeydown);
     });

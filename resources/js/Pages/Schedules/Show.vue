@@ -12,7 +12,7 @@
         >
             <div
                 v-if="toast.visible"
-                class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+                class="fixed bottom-24 lg:bottom-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none w-max max-w-[calc(100vw-2rem)]"
             >
                 <div
                     :class="[
@@ -30,21 +30,25 @@
             </div>
         </Transition>
 
-        <!-- ── Picker popover (portal — rendered at root level) ────────────── -->
+        <!-- ── Picker popover (desktop) / bottom sheet (mobile) ────────────── -->
         <Teleport to="body">
+            <div
+                v-if="picker.open && picker.sheet"
+                class="fixed inset-0 z-[9998] bg-black/50"
+            />
             <div
                 v-if="picker.open"
                 ref="pickerEl"
-                :style="{
-                    position: 'fixed',
-                    top: picker.y + 'px',
-                    left: picker.x + 'px',
-                    width: '280px',
-                    zIndex: 9999,
-                }"
-                class="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+                :style="picker.sheet
+                    ? { zIndex: 9999 }
+                    : { position: 'fixed', top: picker.y + 'px', left: picker.x + 'px', width: '280px', zIndex: 9999 }"
+                :class="picker.sheet
+                    ? 'fixed inset-x-0 bottom-0 rounded-t-2xl pb-safe'
+                    : 'rounded-xl'"
+                class="bg-white shadow-2xl border border-gray-200 overflow-hidden"
                 @click.stop
             >
+                <div v-if="picker.sheet" class="mx-auto mt-2.5 h-1 w-9 rounded-full bg-gray-300"></div>
                 <!-- Picker header -->
                 <div class="px-3 pt-3 pb-2 border-b border-gray-100">
                     <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -66,7 +70,7 @@
                 </div>
 
                 <!-- Attendant list -->
-                <div class="overflow-y-auto max-h-60">
+                <div class="overflow-y-auto" :class="picker.sheet ? 'max-h-[50dvh]' : 'max-h-60'">
                     <!-- Clear option -->
                     <button
                         v-if="picker.currentAttendantId !== null"
@@ -132,7 +136,7 @@
         </Teleport>
 
         <!-- ── Page header ──────────────────────────────────────────────────── -->
-        <div class="flex items-start justify-between mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8">
             <div>
                 <Link
                     href="/schedules"
@@ -151,10 +155,10 @@
             </div>
 
             <!-- PDF buttons -->
-            <div class="flex items-center gap-2 shrink-0 mt-1">
+            <div class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <button
                     type="button"
-                    class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-200 transition-colors"
+                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-200 transition-colors"
                     @click="pdfPreviewOpen = true"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -165,7 +169,7 @@
                 </button>
                 <a
                     :href="`/schedules/${schedule.id}/pdf`"
-                    class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -189,8 +193,8 @@
         <!-- ── Schedule grid ────────────────────────────────────────────────── -->
         <div v-else class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
-            <!-- Legend -->
-            <div class="px-6 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-6">
+            <!-- Legend (desktop only) -->
+            <div class="px-6 py-3 bg-gray-50 border-b border-gray-100 hidden md:flex items-center gap-6">
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-2">Leyenda</span>
                 <span class="inline-flex items-center gap-1.5 text-xs text-gray-600">
                     <span class="w-3 h-3 rounded-sm bg-indigo-400 shrink-0"></span>
@@ -214,7 +218,54 @@
                 </span>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- Mobile: per-week cards with tappable slots -->
+            <div class="md:hidden divide-y divide-gray-100">
+                <div v-for="week in localWeeks" :key="`m-${week.id}`" class="px-4 py-4">
+                    <div class="mb-3">
+                        <span class="block text-sm font-bold text-gray-900 uppercase tracking-wide">
+                            Semana {{ week.week_number }}
+                        </span>
+                        <span class="block text-xs text-gray-400 mt-0.5">
+                            {{ formatWeekRange(week.start_date, week.end_date) }}
+                        </span>
+                    </div>
+
+                    <div v-for="day in ['friday', 'saturday']" :key="`m-${week.id}-${day}`" class="mb-3 last:mb-0">
+                        <span class="inline-flex items-center gap-1.5 mb-1.5">
+                            <span :class="['w-1.5 h-1.5 rounded-full shrink-0', day === 'friday' ? 'bg-indigo-400' : 'bg-violet-400']"></span>
+                            <span :class="['text-xs font-semibold', day === 'friday' ? 'text-indigo-700' : 'text-violet-700']">
+                                {{ formatMeetingDate(week.start_date, day === 'friday' ? 4 : 5) }}
+                            </span>
+                        </span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                v-for="(label, key) in roles"
+                                :key="`m-${day}-${week.id}-${key}`"
+                                type="button"
+                                class="relative text-left rounded-lg border px-3 py-2 min-h-[56px] transition-colors"
+                                :class="isActivePicker(week.id, day, key)
+                                    ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50'
+                                    : 'border-gray-200 active:bg-indigo-50/40'"
+                                @click="openPicker($event, week, day, key)"
+                            >
+                                <span class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg z-10" v-if="isSaving(week.id, day, key)">
+                                    <svg class="w-4 h-4 text-indigo-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                    </svg>
+                                </span>
+                                <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-tight truncate">{{ label }}</span>
+                                <span v-if="week.meetings?.[day]?.[key]?.attendant" class="block text-sm font-semibold text-gray-900 leading-tight truncate mt-0.5">
+                                    {{ week.meetings[day][key].attendant.name }}
+                                </span>
+                                <span v-else class="block text-sm text-gray-300 font-medium select-none mt-0.5">— Asignar —</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto hidden md:block">
                 <table class="w-full text-sm border-collapse">
                     <!-- Column headers -->
                     <thead>
@@ -378,7 +429,7 @@
             </div>
 
             <!-- Table footer -->
-            <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400 flex items-center justify-between">
+            <div class="px-4 md:px-6 py-3 bg-gray-50 border-t border-gray-100 text-xs text-gray-400 flex flex-wrap items-center justify-between gap-2">
                 <span>{{ schedule.name }} &mdash; Programa de Acomodadores</span>
                 <span>{{ totalAssignments }} de {{ totalSlots }} asignaciones completadas</span>
             </div>
@@ -419,14 +470,14 @@
             >
                 <div
                     v-if="pdfPreviewOpen"
-                    class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+                    class="fixed inset-0 z-[200] flex items-center justify-center p-0 sm:p-4"
                     @click.self="pdfPreviewOpen = false"
                 >
                     <!-- Backdrop -->
                     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="pdfPreviewOpen = false" />
 
-                    <!-- Modal panel -->
-                    <div class="relative z-10 bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-5xl" style="height: 90vh;">
+                    <!-- Modal panel (fullscreen on mobile) -->
+                    <div class="relative z-10 bg-white rounded-none sm:rounded-2xl shadow-2xl flex flex-col w-full max-w-5xl h-[100dvh] sm:h-[90vh] pb-safe sm:pb-0">
                         <!-- Header -->
                         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
                             <div>
@@ -523,6 +574,7 @@ const pickerSearch   = ref('');
 
 const picker = ref({
     open:               false,
+    sheet:              false,  // bottom-sheet mode on mobile
     weekId:             null,
     day:                null,   // 'friday' | 'saturday'
     roleKey:            null,
@@ -574,6 +626,9 @@ const filteredAttendants = computed(() => {
 function openPicker(event, week, day, roleKey) {
     const assignment = week.meetings?.[day]?.[roleKey] ?? null;
 
+    // Bottom sheet on mobile, positioned popover on desktop
+    const sheet = window.innerWidth < 640;
+
     // Position the picker below (or above) the clicked cell
     const cell = event.currentTarget;
     const rect = cell.getBoundingClientRect();
@@ -595,6 +650,7 @@ function openPicker(event, week, day, roleKey) {
 
     picker.value = {
         open:               true,
+        sheet,
         weekId:             week.id,
         day,
         roleKey,
@@ -608,7 +664,7 @@ function openPicker(event, week, day, roleKey) {
 
     // Attach outside-click listener
     nextTick(() => {
-        pickerSearchEl.value?.focus();
+        if (!sheet) pickerSearchEl.value?.focus(); // don't pop the keyboard on mobile
         document.addEventListener('click', handleOutsideClick, { capture: true });
         document.addEventListener('keydown', handlePickerKeydown);
     });

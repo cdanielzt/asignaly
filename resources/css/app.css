@@ -7,15 +7,34 @@
 }
 
 @layer components {
-    /* Items inside RowActions dropdown menus */
+    /* Items inside RowActions dropdown menus — 44px touch targets on mobile */
     .menu-item {
-        @apply block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#2e2e34] hover:text-white transition-colors;
+        @apply block w-full text-left px-4 py-3 sm:py-2 text-base sm:text-sm text-gray-700 hover:bg-[#2e2e34] hover:text-white transition-colors;
     }
     .menu-item-danger {
-        @apply block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors;
+        @apply block w-full text-left px-4 py-3 sm:py-2 text-base sm:text-sm text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors;
     }
     .menu-divider {
         @apply my-1 border-t border-[#34343b];
+    }
+}
+
+@layer utilities {
+    /* iPhone home-indicator / notch safe areas (0 in regular browsers) */
+    .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .pt-safe {
+        padding-top: env(safe-area-inset-top);
+    }
+}
+
+/* iOS Safari auto-zooms focused inputs whose font-size < 16px — force 16px on mobile */
+@media (max-width: 639px) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+        font-size: 1rem;
     }
 }
 

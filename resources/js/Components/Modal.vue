@@ -3,15 +3,18 @@
         <Transition name="modal">
             <div
                 v-if="show"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+                class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60"
                 @click.self="$emit('close')"
             >
-                <div class="w-full max-w-lg rounded-2xl bg-[#1e1e1e] border border-[#333] shadow-2xl overflow-hidden">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-[#2a2a2a]">
+                <div class="modal-panel w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-[#1e1e1e] border-t sm:border border-[#333] shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
+                    <!-- Drag-handle affordance (mobile only) -->
+                    <div class="sm:hidden mx-auto mt-2.5 h-1 w-9 rounded-full bg-[#3a3a3a] shrink-0"></div>
+
+                    <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#2a2a2a] shrink-0">
                         <h3 class="text-base font-semibold text-white">{{ title }}</h3>
                         <button
                             type="button"
-                            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#2a2a2a] transition-colors"
+                            class="w-10 h-10 sm:w-8 sm:h-8 -mr-1 sm:mr-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-[#2a2a2a] transition-colors"
                             title="Cerrar"
                             @click="$emit('close')"
                         >
@@ -20,7 +23,7 @@
                             </svg>
                         </button>
                     </div>
-                    <div class="px-6 py-5">
+                    <div class="px-4 sm:px-6 py-5 overflow-y-auto pb-safe">
                         <slot />
                     </div>
                 </div>
@@ -57,5 +60,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey));
 .modal-enter-from,
 .modal-leave-to {
     opacity: 0;
+}
+/* Slide up from the bottom on mobile */
+@media (max-width: 639px) {
+    .modal-enter-active .modal-panel,
+    .modal-leave-active .modal-panel {
+        transition: transform 0.25s ease;
+    }
+    .modal-enter-from .modal-panel,
+    .modal-leave-to .modal-panel {
+        transform: translateY(100%);
+    }
 }
 </style>
