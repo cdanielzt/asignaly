@@ -244,7 +244,7 @@
             >
                 <div class="flex items-center gap-3 min-w-0">
                     <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wide shrink-0">Suplantando a:</span>
-                    <span class="text-sm text-indigo-900 font-medium truncate">{{ $page.props.auth.user?.name }}</span>
+                    <span class="text-sm text-gray-900 font-semibold truncate">{{ $page.props.auth.user?.name }}</span>
                 </div>
                 <button
                     type="button"
