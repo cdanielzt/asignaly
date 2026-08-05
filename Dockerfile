@@ -18,4 +18,5 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction \
 # migrate + cache config at boot (env is present at runtime), then serve on Render's $PORT
 CMD php artisan migrate --force \
  && php artisan config:cache && php artisan route:cache && php artisan view:cache \
+ && { [ -z "$ADMIN_EMAIL" ] || php artisan app:make-admin "$ADMIN_EMAIL" "$ADMIN_PASSWORD"; } \
  && frankenphp php-server --listen :${PORT:-8080} --root public/
