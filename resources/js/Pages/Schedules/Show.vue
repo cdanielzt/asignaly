@@ -248,7 +248,7 @@
                                     : 'border-gray-200 active:bg-indigo-50/40'"
                                 @click="openPicker($event, week, day, key)"
                             >
-                                <span class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg z-10" v-if="isSaving(week.id, day, key)">
+                                <span class="absolute inset-0 flex items-center justify-center bg-gray-100/80 rounded-lg z-10" v-if="isSaving(week.id, day, key)">
                                     <svg class="w-4 h-4 text-indigo-500 animate-spin" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
@@ -330,7 +330,7 @@
                                         <!-- Saving spinner -->
                                         <span
                                             v-if="isSaving(week.id, 'friday', key)"
-                                            class="absolute inset-0 flex items-center justify-center bg-white/70 z-10"
+                                            class="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-10"
                                         >
                                             <svg class="w-4 h-4 text-indigo-500 animate-spin" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
@@ -393,7 +393,7 @@
                                         <!-- Saving spinner -->
                                         <span
                                             v-if="isSaving(week.id, 'saturday', key)"
-                                            class="absolute inset-0 flex items-center justify-center bg-white/70 z-10"
+                                            class="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-10"
                                         >
                                             <svg class="w-4 h-4 text-violet-500 animate-spin" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
