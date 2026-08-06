@@ -140,19 +140,21 @@
         </Teleport>
 
         <!-- ── Page header ──────────────────────────────────────────────────── -->
-        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8">
-            <div>
+        <!-- On mobile the app bar already shows the meeting name, so this collapses
+             to one row: back link left, PDF actions right. -->
+        <div class="flex items-center justify-between sm:items-start gap-3 mb-3 sm:mb-8">
+            <div class="min-w-0">
                 <Link
                     href="/meetings"
-                    class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium mb-3 transition-colors"
+                    class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium sm:mb-3 transition-colors"
                 >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                     Todos los programas
                 </Link>
-                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">{{ meeting.name }}</h1>
-                <p class="text-sm text-gray-500 mt-1">
+                <h1 class="hidden sm:block text-2xl font-bold text-gray-900 tracking-tight">{{ meeting.name }}</h1>
+                <p class="hidden sm:block text-sm text-gray-500 mt-1">
                     {{ localWeeks.length }} semana{{ localWeeks.length !== 1 ? 's' : '' }} &middot;
                     Programa de reunión entre semana
                 </p>
@@ -162,7 +164,7 @@
             <div v-if="localWeeks.length" class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <button
                     type="button"
-                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg border border-gray-200 transition-colors"
+                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg border border-gray-200 transition-colors"
                     title="Vista previa PDF"
                     @click="pdfPreviewOpen = true"
                 >
@@ -174,7 +176,7 @@
                 </button>
                 <a
                     :href="`/meetings/${meeting.id}/pdf`"
-                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg transition-colors"
+                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg transition-colors"
                     title="Descargar PDF"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
