@@ -540,7 +540,7 @@ const pdfPreviewOpen = ref(false);
 const localWeeks = ref(JSON.parse(JSON.stringify(props.weeks)));
 
 // ── CSRF token ───────────────────────────────────────────────────────────────
-const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+import { csrfHeaders } from '@/csrf';
 
 // ── Saving state set ─────────────────────────────────────────────────────────
 // Key format: "weekId:day:roleKey"
@@ -739,7 +739,7 @@ async function handleAssign(attendantId) {
             headers: {
                 'Content-Type':  'application/json',
                 'Accept':        'application/json',
-                'X-CSRF-TOKEN':  csrf,
+                ...csrfHeaders(),
             },
             body: JSON.stringify({ attendant_id: attendantId }),
         });

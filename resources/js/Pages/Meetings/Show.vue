@@ -486,7 +486,7 @@ document.addEventListener('keydown', handlePdfModalKeydown);
 onUnmounted(() => document.removeEventListener('keydown', handlePdfModalKeydown));
 
 // ── CSRF token ───────────────────────────────────────────────────────────────
-const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+import { csrfHeaders } from '@/csrf';
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 const toast = ref({ visible: false, message: '', type: 'error' });
@@ -644,7 +644,7 @@ async function updatePart(week, part, changes) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept':       'application/json',
-                'X-CSRF-TOKEN': csrf,
+                ...csrfHeaders(),
             },
             body: JSON.stringify({ title: part.title, duration: part.duration }),
         });
@@ -684,7 +684,7 @@ async function addPart(week, sectionKey) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept':       'application/json',
-                'X-CSRF-TOKEN': csrf,
+                ...csrfHeaders(),
             },
             body: JSON.stringify({
                 meeting_week_id: week.id,
@@ -726,7 +726,7 @@ async function removePart() {
             method:  'DELETE',
             headers: {
                 'Accept':       'application/json',
-                'X-CSRF-TOKEN': csrf,
+                ...csrfHeaders(),
             },
         });
 
@@ -952,7 +952,7 @@ async function handleAssign(targetId) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept':       'application/json',
-                'X-CSRF-TOKEN': csrf,
+                ...csrfHeaders(),
             },
             body: JSON.stringify({
                 assignable_kind: targetId !== null ? kind : null,
