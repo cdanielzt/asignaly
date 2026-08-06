@@ -94,16 +94,11 @@
                     <button
                         v-for="entry in filteredCatalog"
                         :key="entry.id"
-                        :disabled="entry._inMeeting"
                         :class="[
-                            'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors border-b border-gray-50 last:border-b-0',
-                            entry._isCurrent
-                                ? 'bg-indigo-50 hover:bg-indigo-100'
-                                : entry._inMeeting
-                                    ? 'opacity-50 cursor-not-allowed bg-white'
-                                    : 'hover:bg-gray-50 cursor-pointer bg-white',
+                            'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer',
+                            entry._isCurrent ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-gray-50 bg-white',
                         ]"
-                        @click="!entry._inMeeting && handleAssign(entry.id)"
+                        @click="handleAssign(entry.id)"
                     >
                         <!-- Checkmark or spacer -->
                         <span class="w-4 h-4 shrink-0 flex items-center justify-center">
@@ -279,7 +274,7 @@
                             <div
                                 v-for="part in week.sections[sectionKey]"
                                 :key="part.id"
-                                class="group/part relative rounded-lg border border-gray-100 hover:border-gray-200 transition-colors px-4 py-2"
+                                class="group/part relative rounded-lg hover:bg-gray-50 transition-colors px-4 py-2"
                             >
                                 <!-- Remove button -->
                                 <button

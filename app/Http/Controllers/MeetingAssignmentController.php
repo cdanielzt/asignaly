@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendant;
 use App\Models\MeetingAssignment;
-use App\Models\MeetingPart;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -40,35 +39,8 @@ class MeetingAssignmentController extends Controller
                 ]);
             }
 
-            // Rule: one person cannot hold two parts in the same meeting week,
-            // except for "Consejero" (header, position 2) — that role doesn't
-            // count toward the conflict, so the same person can hold it
-            // alongside another assignment.
-            $weekId = $meetingAssignment->part->meeting_week_id;
-
-            $isConsejero = $meetingAssignment->part->section === 'header'
-                && $meetingAssignment->part->position === 2;
-
-            if (! $isConsejero) {
-                $partIds = MeetingPart::where('meeting_week_id', $weekId)
-                    ->where(function ($query) {
-                        $query->where('section', '!=', 'header')
-                            ->orWhere('position', '!=', 2);
-                    })
-                    ->pluck('id');
-
-                $conflict = MeetingAssignment::whereIn('meeting_part_id', $partIds)
-                    ->where('id', '!=', $meetingAssignment->id)
-                    ->where('assignable_type', $assignableType)
-                    ->where('assignable_id', $assignableId)
-                    ->exists();
-
-                if ($conflict) {
-                    throw ValidationException::withMessages([
-                        'assignable_id' => 'This person is already assigned to another part in this meeting.',
-                    ]);
-                }
-            }
+            // One person may hold several parts in the same week; the picker
+            // flags who is already assigned but leaves the call to the user.
         }
 
         $meetingAssignment->update([
