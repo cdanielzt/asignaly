@@ -10,6 +10,8 @@ RUN install-php-extensions pdo_pgsql intl zip gd bcmath opcache
 # Render's sandbox refuses to exec a binary with file capabilities; we bind a high port so we don't need them
 RUN setcap -r "$(command -v frankenphp)" || true
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Container logs must go to the platform's stream; laravel.log dies with the container
+ENV LOG_CHANNEL=stderr
 WORKDIR /app
 COPY . .
 COPY --from=assets /app/public/build public/build
