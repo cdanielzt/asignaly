@@ -227,10 +227,9 @@
             </div>
 
             <template v-for="week in (activeWeek ? [activeWeek] : [])" :key="week.id">
-            <!-- no overflow-hidden: it would kill the sticky week header below -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                <!-- Week header — sticks so you keep the week in view while scrolling parts -->
-                <div class="sticky top-[calc(env(safe-area-inset-top)_+_3.5rem)] lg:top-0 z-20 rounded-t-xl px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <!-- Week header -->
+                <div class="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <span class="block text-xs font-bold text-gray-900 uppercase tracking-wide">
                             Semana {{ week.week_number }}
@@ -259,8 +258,8 @@
 
                 <!-- Sections -->
                 <div class="divide-y divide-gray-100">
-                    <div v-for="sectionKey in sectionOrder" :key="`${week.id}-${sectionKey}`" class="px-4 sm:px-6 py-5">
-                        <div class="flex items-center justify-between mb-3">
+                    <div v-for="sectionKey in sectionOrder" :key="`${week.id}-${sectionKey}`" class="px-2 sm:px-6 py-3 sm:py-5">
+                        <div class="flex items-center justify-between mb-2 sm:mb-3">
                             <h3 class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                                 {{ sections[sectionKey] ?? sectionKey }}
                             </h3>
@@ -281,13 +280,13 @@
                             <div
                                 v-for="part in week.sections[sectionKey]"
                                 :key="part.id"
-                                class="group/part relative rounded-lg hover:bg-gray-50 transition-colors px-4 py-2"
+                                class="group/part relative rounded-lg hover:bg-gray-50 transition-colors px-1.5 sm:px-4 py-2"
                             >
                                 <!-- Remove button -->
                                 <button
                                     v-if="canRemoveFrom(sectionKey)"
                                     type="button"
-                                    class="absolute top-0 right-0 sm:top-2 sm:right-2 w-11 h-11 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
+                                    class="absolute top-0 right-0 sm:top-2 sm:right-2 w-9 h-9 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
                                     title="Eliminar elemento"
                                     @click="confirmRemovePart(week, part)"
                                 >
@@ -305,21 +304,21 @@
                                 </div>
 
                                 <!-- editable types -->
-                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-3 pr-11 sm:pr-6">
-                                    <!-- Title / duration — stacked on mobile so the title gets the full width -->
-                                    <div class="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pr-9 sm:pr-6">
+                                    <!-- Title / duration on one row; minutes stays narrow so the title keeps the space -->
+                                    <div class="flex-1 min-w-0 flex items-center gap-1.5">
                                         <input
                                             type="text"
                                             :value="part.title"
                                             placeholder="Título…"
-                                            class="w-full sm:w-auto sm:flex-1 min-w-0 text-sm font-medium text-gray-800 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="flex-1 min-w-0 text-sm font-medium text-gray-800 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { title: e.target.value })"
                                         />
                                         <input
                                             type="text"
                                             :value="part.duration"
                                             placeholder="min."
-                                            class="w-20 shrink-0 text-sm text-gray-500 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="w-12 sm:w-20 shrink-0 text-sm text-gray-500 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { duration: e.target.value })"
                                         />
                                         <svg
