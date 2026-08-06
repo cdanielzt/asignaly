@@ -162,23 +162,25 @@
             <div v-if="localWeeks.length" class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <button
                     type="button"
-                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-200 transition-colors"
+                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg border border-gray-200 transition-colors"
+                    title="Vista previa PDF"
                     @click="pdfPreviewOpen = true"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Vista previa PDF
+                    <span class="hidden sm:inline">Vista previa PDF</span>
                 </button>
                 <a
                     :href="`/meetings/${meeting.id}/pdf`"
-                    class="flex-1 sm:flex-initial justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-colors"
+                    class="shrink-0 justify-center inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg transition-colors"
+                    title="Descargar PDF"
                 >
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Descargar PDF
+                    <span class="hidden sm:inline">Descargar PDF</span>
                 </a>
             </div>
         </div>
@@ -197,7 +199,10 @@
         <!-- ── Weeks (tabbed) ───────────────────────────────────────────────── -->
         <div v-else>
             <!-- Week tabs -->
-            <div class="flex items-center gap-1 mb-4 border-b border-gray-200 overflow-x-auto overflow-y-hidden">
+            <div class="relative mb-4">
+                <!-- fade hints that more weeks are scrolled off to the right -->
+                <div class="sm:hidden pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#141414] to-transparent z-10"></div>
+            <div ref="tabsEl" class="flex items-center gap-1 border-b border-gray-200 overflow-x-auto overflow-y-hidden">
                 <button
                     v-for="(week, idx) in localWeeks"
                     :key="week.id"
@@ -219,11 +224,13 @@
                     </span>
                 </button>
             </div>
+            </div>
 
             <template v-for="week in (activeWeek ? [activeWeek] : [])" :key="week.id">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <!-- Week header -->
-                <div class="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+            <!-- no overflow-hidden: it would kill the sticky week header below -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                <!-- Week header — sticks so you keep the week in view while scrolling parts -->
+                <div class="sticky top-[calc(env(safe-area-inset-top)_+_3.5rem)] lg:top-0 z-20 rounded-t-xl px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
                     <div>
                         <span class="block text-xs font-bold text-gray-900 uppercase tracking-wide">
                             Semana {{ week.week_number }}
@@ -280,7 +287,7 @@
                                 <button
                                     v-if="canRemoveFrom(sectionKey)"
                                     type="button"
-                                    class="absolute top-1 right-1 sm:top-2 sm:right-2 w-9 h-9 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
+                                    class="absolute top-0 right-0 sm:top-2 sm:right-2 w-11 h-11 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
                                     title="Eliminar elemento"
                                     @click="confirmRemovePart(week, part)"
                                 >
@@ -298,21 +305,21 @@
                                 </div>
 
                                 <!-- editable types -->
-                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-3 pr-9 sm:pr-6">
-                                    <!-- Title / duration -->
-                                    <div class="flex-1 min-w-0 flex items-center gap-2">
+                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-3 pr-11 sm:pr-6">
+                                    <!-- Title / duration — stacked on mobile so the title gets the full width -->
+                                    <div class="flex-1 min-w-0 flex flex-wrap items-center gap-2">
                                         <input
                                             type="text"
                                             :value="part.title"
                                             placeholder="Título…"
-                                            class="flex-1 min-w-0 text-sm font-medium text-gray-800 bg-transparent border border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="w-full sm:w-auto sm:flex-1 min-w-0 text-sm font-medium text-gray-800 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { title: e.target.value })"
                                         />
                                         <input
                                             type="text"
                                             :value="part.duration"
                                             placeholder="min."
-                                            class="w-20 shrink-0 text-sm text-gray-500 bg-transparent border border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="w-20 shrink-0 text-sm text-gray-500 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-2 py-2 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { duration: e.target.value })"
                                         />
                                         <svg
@@ -445,7 +452,7 @@
 </template>
 
 <script setup>
-import { ref, computed, h, nextTick, onUnmounted } from 'vue';
+import { ref, computed, h, nextTick, onUnmounted, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -467,6 +474,12 @@ const localWeeks = ref(JSON.parse(JSON.stringify(props.weeks)));
 // ── Week tabs ────────────────────────────────────────────────────────────────
 const activeWeekIndex = ref(0);
 const activeWeek = computed(() => localWeeks.value[activeWeekIndex.value] ?? null);
+
+// Keep the selected week visible when the strip overflows off-screen on mobile
+const tabsEl = ref(null);
+watch(activeWeekIndex, idx => {
+    tabsEl.value?.children[idx]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+});
 
 // ── PDF preview modal ────────────────────────────────────────────────────────
 const pdfPreviewOpen = ref(false);
