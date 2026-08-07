@@ -23,7 +23,12 @@ class StudentController extends Controller
             'gender' => 'required|in:brother,sister',
         ]);
 
-        Student::create($request->only('name', 'gender'));
+        $student = Student::create($request->only('name', 'gender'));
+
+        // Lets the meeting picker create a student inline without leaving the page
+        if ($request->wantsJson()) {
+            return response()->json($student->only('id', 'name', 'gender'), 201);
+        }
 
         return redirect()->route('students.index')->with('success', 'Estudiante agregado correctamente.');
     }

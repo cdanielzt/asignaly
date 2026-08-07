@@ -136,6 +136,25 @@
                         </div>
                     </button>
                 </div>
+
+                <!-- Inline "create student" — shows once the typed name isn't in the list -->
+                <div v-if="canCreateStudent" class="border-t border-gray-100 p-3 bg-gray-50">
+                    <p class="text-[11px] text-gray-500 mb-2">
+                        Agregar a <span class="font-semibold text-gray-700">&ldquo;{{ pickerSearch.trim() }}&rdquo;</span> como estudiante nuevo:
+                    </p>
+                    <div class="flex gap-2">
+                        <button
+                            v-for="[value, label] in [['brother', 'Hermano'], ['sister', 'Hermana']]"
+                            :key="value"
+                            type="button"
+                            :disabled="creatingStudent"
+                            class="flex-1 min-h-[44px] px-2 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 active:bg-indigo-100 disabled:opacity-50 transition-colors"
+                            @click="createStudent(value)"
+                        >
+                            + {{ label }}
+                        </button>
+                    </div>
+                </div>
             </div>
         </Teleport>
 
@@ -591,8 +610,11 @@ function slotDefs(type) {
     return [];
 }
 
+// Local copy so students created from the picker appear without a page reload
+const students = ref([...props.students]);
+
 function catalogFor(kind) {
-    return kind === 'student' ? props.students : props.attendants;
+    return kind === 'student' ? students.value : props.attendants;
 }
 
 // ── Add / remove part config ─────────────────────────────────────────────────
@@ -823,6 +845,39 @@ const filteredCatalog = computed(() => {
             _inMeeting: meetingOccupiedIds.value.has(e.id),
         }));
 });
+
+// ── Create a student from inside the picker ───────────────────────────────────
+const creatingStudent = ref(false);
+
+const canCreateStudent = computed(() => {
+    const search = pickerSearch.value.trim();
+    if (picker.value.kind !== 'student' || !search) return false;
+    return !students.value.some(s => s.name.toLowerCase() === search.toLowerCase());
+});
+
+async function createStudent(gender) {
+    const name = pickerSearch.value.trim();
+    if (!name || creatingStudent.value) return;
+
+    creatingStudent.value = true;
+    try {
+        const response = await fetch('/students', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', ...csrfHeaders() },
+            body:    JSON.stringify({ name, gender }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const student = await response.json();
+        students.value = [...students.value, student].sort((a, b) => a.name.localeCompare(b.name));
+        showToast(`${student.name} agregado.`, 'success');
+        handleAssign(student.id); // closes the picker itself
+    } catch (err) {
+        showToast('No se pudo crear el estudiante. Por favor intenta de nuevo.', 'error');
+    } finally {
+        creatingStudent.value = false;
+    }
+}
 
 // ── Open / close picker ───────────────────────────────────────────────────────
 function openPicker(event, week, part, slotDef) {
