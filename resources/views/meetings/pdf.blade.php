@@ -101,7 +101,7 @@
 
         table.standalone-row td.accent-cell {
             width: 3pt;
-            background-color: #5B7C99;
+            background-color: #3c7f8b;
         }
 
         table.standalone-row td.standalone-text {
@@ -122,9 +122,9 @@
             margin: 3pt 0 4pt 0;
         }
 
-        .section-band.tesoros { background-color: #5B7C99; }
-        .section-band.maestros { background-color: #CDA86B; }
-        .section-band.vida-cristiana { background-color: #7A3030; }
+        .section-band.tesoros { background-color: #3c7f8b; }
+        .section-band.maestros { background-color: #d68f00; }
+        .section-band.vida-cristiana { background-color: #bf2f13; }
 
         table.items {
             width: 100%;

@@ -15,6 +15,12 @@ class Meeting extends Model
 
     const MEETING_DAY = 'friday';
 
+    // ponytail: derived from month/year, so old English rows render in Spanish without a data migration
+    public function getNameAttribute(): string
+    {
+        return ucfirst(Carbon::createFromDate($this->year, $this->month, 1)->locale('es')->translatedFormat('F Y'));
+    }
+
     public function weeks(): HasMany
     {
         return $this->hasMany(MeetingWeek::class)->orderBy('week_number');

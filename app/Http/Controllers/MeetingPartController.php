@@ -14,7 +14,11 @@ class MeetingPartController extends Controller
             'duration' => 'nullable|string|max:50',
         ]);
 
-        $meetingPart->update($request->only('title', 'duration'));
+        // ponytail: ConvertEmptyStringsToNull turns a cleared field into null; title is NOT NULL
+        $meetingPart->update([
+            'title'    => $request->title ?? '',
+            'duration' => $request->duration,
+        ]);
 
         return response()->json([
             'part' => [
@@ -45,7 +49,7 @@ class MeetingPartController extends Controller
             'meeting_week_id' => $request->meeting_week_id,
             'section'         => $request->section,
             'position'        => $position,
-            'title'           => $request->title,
+            'title'           => $request->title ?? '',
             'duration'        => $request->duration,
             'type'            => $request->type,
         ]);

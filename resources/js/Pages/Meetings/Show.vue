@@ -183,6 +183,21 @@
             <div v-if="localWeeks.length" class="flex items-center gap-2 shrink-0 sm:mt-1">
                 <button
                     type="button"
+                    class="shrink-0 justify-center inline-flex items-center gap-2 text-sm font-medium w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg border transition-colors"
+                    :class="showDuration
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                        : 'bg-white hover:bg-gray-50 border-gray-200 text-gray-700'"
+                    :title="showDuration ? 'Ocultar duración' : 'Mostrar duración'"
+                    @click="toggleDuration"
+                >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="12" cy="12" r="9" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" />
+                    </svg>
+                    <span class="hidden sm:inline">Duración</span>
+                </button>
+                <button
+                    type="button"
                     class="shrink-0 justify-center inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 rounded-lg border border-gray-200 transition-colors"
                     title="Vista previa PDF"
                     @click="pdfPreviewOpen = true"
@@ -279,9 +294,20 @@
 
                 <!-- Sections -->
                 <div class="divide-y divide-gray-100">
-                    <div v-for="sectionKey in sectionOrder" :key="`${week.id}-${sectionKey}`" class="px-2 sm:px-6 py-3 sm:py-5">
+                    <div
+                        v-for="sectionKey in sectionOrder"
+                        :key="`${week.id}-${sectionKey}`"
+                        class="px-2 sm:px-6 py-3 sm:py-5"
+                    >
                         <div class="flex items-center justify-between mb-2 sm:mb-3">
-                            <h3 class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                            <!-- ponytail: colored band mirrors the PDF section colors -->
+                            <h3
+                                class="text-[11px] font-semibold uppercase tracking-wider"
+                                :class="SECTION_COLORS[sectionKey]
+                                    ? 'text-white px-2 py-1 rounded-md'
+                                    : 'text-gray-400'"
+                                :style="SECTION_COLORS[sectionKey] ? { backgroundColor: SECTION_COLORS[sectionKey] } : null"
+                            >
                                 {{ sections[sectionKey] ?? sectionKey }}
                             </h3>
                             <button
@@ -297,17 +323,21 @@
                             </button>
                         </div>
 
-                        <div class="space-y-1.5">
+                        <div class="space-y-2.5 sm:space-y-1.5">
+                            <!-- ponytail: mobile gets a card outline per part so title+minutes+assignee read as one unit -->
                             <div
                                 v-for="part in week.sections[sectionKey]"
                                 :key="part.id"
-                                class="group/part relative rounded-lg hover:bg-gray-50 transition-colors px-1.5 sm:px-4 py-2"
+                                class="group/part relative rounded-lg border px-2 py-2.5 sm:px-4 sm:py-2 transition-colors duration-700"
+                                :class="justAdded.has(part.id)
+                                    ? 'border-indigo-400 bg-indigo-50 ring-2 ring-indigo-100'
+                                    : 'border-gray-300 bg-gray-50 sm:border-transparent sm:bg-transparent sm:hover:bg-gray-50'"
                             >
                                 <!-- Remove button -->
                                 <button
                                     v-if="canRemoveFrom(sectionKey)"
                                     type="button"
-                                    class="absolute top-0 right-0 sm:top-2 sm:right-2 w-9 h-9 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
+                                    class="absolute top-0.5 right-0.5 sm:top-2 sm:right-2 w-9 h-9 sm:w-6 sm:h-6 flex items-center justify-center rounded-md text-gray-300 active:text-red-500 hover:text-red-500 hover:bg-red-50 sm:opacity-0 sm:group-hover/part:opacity-100 transition-all"
                                     title="Eliminar elemento"
                                     @click="confirmRemovePart(week, part)"
                                 >
@@ -317,7 +347,7 @@
                                 </button>
 
                                 <!-- display_only -->
-                                <div v-if="part.type === 'display_only'" class="pr-9 sm:pr-6">
+                                <div v-if="part.type === 'display_only'" :class="canRemoveFrom(sectionKey) ? 'pr-9 sm:pr-6' : 'sm:pr-6'">
                                     <p class="text-sm text-gray-800">
                                         <span class="font-medium">{{ part.title }}</span>
                                         <span v-if="part.duration" class="text-gray-400"> &mdash; {{ part.duration }}</span>
@@ -325,21 +355,33 @@
                                 </div>
 
                                 <!-- editable types -->
-                                <div v-else class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pr-9 sm:pr-6">
-                                    <!-- Title / duration on one row; minutes stays narrow so the title keeps the space -->
-                                    <div class="flex-1 min-w-0 flex items-center gap-1.5">
+                                <!-- ponytail: two columns everywhere — name left, selector right.
+                                     Minutes rides along in the left column, it's secondary. -->
+                                <div v-else class="flex flex-row items-start sm:items-center gap-2 sm:pr-6 sm:gap-3">
+                                    <div
+                                        class="flex-1 min-w-0 flex items-center gap-1.5"
+                                        :class="canRemoveFrom(sectionKey) ? 'pr-9 sm:pr-0' : ''"
+                                    >
+                                        <p
+                                            v-if="isFixedSection(sectionKey)"
+                                            class="flex-1 min-w-0 text-sm font-medium text-gray-800 px-1.5 sm:px-2 py-1.5 sm:py-1 truncate"
+                                        >
+                                            {{ part.title }}
+                                        </p>
                                         <input
+                                            v-else
                                             type="text"
                                             :value="part.title"
                                             placeholder="Título…"
-                                            class="flex-1 min-w-0 text-sm font-medium text-gray-800 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="flex-1 min-w-0 text-sm font-medium text-gray-800 bg-white sm:bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { title: e.target.value })"
                                         />
                                         <input
+                                            v-if="showDuration && !isFixedSection(sectionKey)"
                                             type="text"
                                             :value="part.duration"
                                             placeholder="min."
-                                            class="w-12 sm:w-20 shrink-0 text-sm text-gray-500 bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
+                                            class="w-12 sm:w-20 shrink-0 text-sm text-gray-500 bg-white sm:bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { duration: e.target.value })"
                                         />
                                         <svg
@@ -353,7 +395,8 @@
                                     </div>
 
                                     <!-- Slots -->
-                                    <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:shrink-0">
+                                    <div class="w-[40%] shrink-0 sm:w-auto">
+                                        <div class="grid grid-cols-1 gap-2 sm:flex sm:items-center">
                                         <AssignmentSlot
                                             v-for="slotDef in slotDefs(part.type)"
                                             :key="slotDef.slot"
@@ -361,12 +404,9 @@
                                             :assignment="part.assignments?.[slotDef.slot]"
                                             :active="isActivePicker(part.id, slotDef.slot)"
                                             :saving="isSlotSaving(part.id, slotDef.slot)"
-                                            :role-badge-class="roleBadgeClass"
-                                            :role-abbr="roleAbbr"
-                                            :gender-badge-class="genderBadgeClass"
-                                            :gender-label="genderLabel"
                                             @open="$event => openPicker($event, week, part, slotDef)"
                                         />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -488,6 +528,13 @@ const props = defineProps({
 
 const sectionOrder = ['header', 'tesoros', 'maestros', 'vida_cristiana', 'closing'];
 
+// Same band colors as the PDF (resources/views/meetings/pdf.blade.php)
+const SECTION_COLORS = {
+    tesoros:        '#3c7f8b',
+    maestros:       '#d68f00',
+    vida_cristiana: '#bf2f13',
+};
+
 // ── Local mutable copy of weeks ──────────────────────────────────────────────
 const localWeeks = ref(JSON.parse(JSON.stringify(props.weeks)));
 
@@ -537,25 +584,11 @@ const AssignmentSlot = {
         assignment:       { type: Object, default: null },
         active:           { type: Boolean, default: false },
         saving:           { type: Boolean, default: false },
-        roleBadgeClass:   { type: Function, required: true },
-        roleAbbr:         { type: Function, required: true },
-        genderBadgeClass: { type: Function, required: true },
-        genderLabel:      { type: Function, required: true },
     },
     emits: ['open'],
     setup(slotProps, { emit }) {
         return () => {
             const who = slotProps.assignment?.assignable ?? null;
-
-            const badge = who
-                ? (who.kind === 'attendant'
-                    ? h('span', {
-                        class: ['inline-block shrink-0 px-1.5 py-0.5 rounded-full font-medium text-[10px] leading-none', slotProps.roleBadgeClass(who.role)],
-                    }, slotProps.roleAbbr(who.role))
-                    : h('span', {
-                        class: ['inline-block shrink-0 px-1.5 py-0.5 rounded-full font-medium text-[10px] leading-none', slotProps.genderBadgeClass(who.gender)],
-                    }, slotProps.genderLabel(who.gender)))
-                : null;
 
             return h('button', {
                 type: 'button',
@@ -563,16 +596,13 @@ const AssignmentSlot = {
                     'relative w-full sm:w-40 min-h-[48px] sm:min-h-0 text-left rounded-lg border px-3 py-1.5 transition-colors focus:outline-none',
                     slotProps.active
                         ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50'
-                        : 'border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30',
+                        : 'bg-white sm:bg-transparent border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30',
                 ],
                 onClick: (e) => emit('open', e),
             }, [
                 h('span', { class: 'block text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-tight' }, slotProps.label),
                 who
-                    ? h('div', { class: 'flex items-center gap-1.5 min-w-0' }, [
-                        h('span', { class: 'text-sm font-semibold text-gray-900 leading-tight truncate' }, who.name),
-                        badge,
-                    ])
+                    ? h('span', { class: 'block text-sm font-semibold text-gray-900 leading-tight truncate' }, who.name)
                     : h('span', { class: 'text-sm text-gray-300 font-medium select-none' }, '— Asignar —'),
                 slotProps.saving
                     ? h('span', { class: 'absolute inset-0 flex items-center justify-center bg-gray-100/80 rounded-lg' }, [
@@ -629,6 +659,19 @@ function canAddTo(sectionKey) {
 }
 function canRemoveFrom(sectionKey) {
     return removableSections.has(sectionKey);
+}
+
+// Duración es opcional — oculta por defecto para que el título use todo el ancho
+const showDuration = ref(localStorage.getItem('meetings.showDuration') === '1');
+
+function toggleDuration() {
+    showDuration.value = !showDuration.value;
+    localStorage.setItem('meetings.showDuration', showDuration.value ? '1' : '0');
+}
+
+// Encabezado y cierre: títulos y duraciones fijos (Presidente, Consejero, Oración inicial/final)
+function isFixedSection(sectionKey) {
+    return sectionKey === 'header' || sectionKey === 'closing';
 }
 
 // ── Saving indicators ────────────────────────────────────────────────────────
@@ -705,6 +748,9 @@ async function updatePart(week, part, changes) {
 }
 
 // ── Add part ─────────────────────────────────────────────────────────────────
+// Highlight freshly added parts for 3s so they're easy to spot in a long list
+const justAdded = ref(new Set());
+
 async function addPart(week, sectionKey) {
     const type = addableSections[sectionKey];
     if (!type) return;
@@ -735,6 +781,8 @@ async function addPart(week, sectionKey) {
         if (part) {
             if (!Array.isArray(week.sections[sectionKey])) week.sections[sectionKey] = [];
             week.sections[sectionKey].push(part);
+            justAdded.value.add(part.id);
+            setTimeout(() => justAdded.value.delete(part.id), 3000);
         }
     } catch (err) {
         showToast('No se pudo agregar el elemento. Por favor intenta de nuevo.', 'error');

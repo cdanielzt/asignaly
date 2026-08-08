@@ -41,8 +41,8 @@ class ScheduleController extends Controller
             'month.unique' => 'Ya existe un programa para ese mes y año.',
         ]);
 
-        $name = Carbon::createFromDate($request->year, $request->month, 1)
-            ->format('F Y');
+        $name = ucfirst(Carbon::createFromDate($request->year, $request->month, 1)
+            ->locale('es')->translatedFormat('F Y'));
 
         $schedule = Schedule::create([
             'month' => $request->month,
