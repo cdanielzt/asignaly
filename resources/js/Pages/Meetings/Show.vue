@@ -30,6 +30,70 @@
             </div>
         </Transition>
 
+        <!-- ── Duration picker — same shell as the assignment picker ───────── -->
+        <Teleport to="body">
+            <div
+                v-if="durationPicker.open"
+                class="fixed inset-0 z-[9998]"
+                :class="durationPicker.sheet ? 'bg-black/50' : ''"
+                @click="durationPicker.open = false"
+            />
+            <div
+                v-if="durationPicker.open"
+                :style="durationPicker.sheet
+                    ? { zIndex: 9999 }
+                    : { position: 'fixed', top: durationPicker.y + 'px', left: durationPicker.x + 'px', width: '200px', zIndex: 9999 }"
+                :class="durationPicker.sheet
+                    ? 'fixed inset-x-0 bottom-0 rounded-t-2xl pb-safe'
+                    : 'rounded-xl'"
+                class="bg-white shadow-2xl border border-gray-200 overflow-hidden"
+                @click.stop
+            >
+                <div v-if="durationPicker.sheet" class="mx-auto mt-2.5 h-1 w-9 rounded-full bg-gray-300"></div>
+                <div class="px-3 pt-3 pb-2 border-b border-gray-100">
+                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Duración</p>
+                </div>
+
+                <div class="overflow-y-auto" :class="durationPicker.sheet ? 'max-h-[50dvh]' : 'max-h-60'">
+                    <button
+                        v-if="durationPicker.current"
+                        class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-red-50 transition-colors group border-b border-gray-100"
+                        @click="pickDuration('')"
+                    >
+                        <span class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                            <svg class="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </span>
+                        <span class="text-sm font-medium text-red-600 group-hover:text-red-700">Sin duración</span>
+                    </button>
+
+                    <button
+                        v-for="d in durationOptions"
+                        :key="d"
+                        :class="[
+                            'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer',
+                            d === durationPicker.current ? 'bg-indigo-50 hover:bg-indigo-100' : 'hover:bg-gray-50 bg-white',
+                        ]"
+                        @click="pickDuration(d)"
+                    >
+                        <span class="w-4 h-4 shrink-0 flex items-center justify-center">
+                            <svg
+                                v-if="d === durationPicker.current"
+                                class="w-4 h-4 text-indigo-600"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </span>
+                        <span :class="['block text-sm leading-tight', d === durationPicker.current ? 'font-semibold text-indigo-800' : 'font-medium text-gray-800']">
+                            {{ d }}
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </Teleport>
+
         <!-- ── Picker popover (desktop) / bottom sheet (mobile) ────────────── -->
         <Teleport to="body">
             <div
@@ -359,9 +423,10 @@
                                      Minutes rides along in the left column, it's secondary. -->
                                 <div v-else class="flex flex-row items-start sm:items-center gap-2 sm:pr-6 sm:gap-3">
                                     <div
-                                        class="flex-1 min-w-0 flex items-center gap-1.5"
+                                        class="flex-1 min-w-0"
                                         :class="canRemoveFrom(sectionKey) ? 'pr-9 sm:pr-0' : ''"
                                     >
+                                      <div class="flex items-center gap-1.5">
                                         <p
                                             v-if="isFixedSection(sectionKey)"
                                             class="flex-1 min-w-0 text-sm font-medium text-gray-800 px-1.5 sm:px-2 py-1.5 sm:py-1 truncate"
@@ -376,14 +441,6 @@
                                             class="flex-1 min-w-0 text-sm font-medium text-gray-800 bg-white sm:bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
                                             @change="e => updatePart(week, part, { title: e.target.value })"
                                         />
-                                        <input
-                                            v-if="showDuration && !isFixedSection(sectionKey)"
-                                            type="text"
-                                            :value="part.duration"
-                                            placeholder="min."
-                                            class="w-12 sm:w-20 shrink-0 text-sm text-gray-500 bg-white sm:bg-transparent border border-gray-200 sm:border-transparent hover:border-gray-200 focus:border-indigo-300 focus:bg-white rounded-md px-1.5 sm:px-2 py-1.5 sm:py-1 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-colors"
-                                            @change="e => updatePart(week, part, { duration: e.target.value })"
-                                        />
                                         <svg
                                             v-if="isPartSaving(part.id)"
                                             class="w-3.5 h-3.5 text-indigo-400 animate-spin shrink-0"
@@ -392,6 +449,28 @@
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                                         </svg>
+                                      </div>
+
+                                      <!-- Duración — mismo estilo que el campo "Asignado" -->
+                                      <button
+                                          v-if="showDuration && !isFixedSection(sectionKey)"
+                                          type="button"
+                                          class="mt-1.5 w-32 sm:w-40 min-h-[48px] sm:min-h-0 text-left rounded-lg border px-3 py-1.5 transition-colors focus:outline-none"
+                                          :class="isActiveDurationPicker(part.id)
+                                              ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50'
+                                              : 'bg-white sm:bg-transparent border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30'"
+                                          @click="$event => openDurationPicker($event, week, part)"
+                                      >
+                                          <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">
+                                              Duración
+                                          </span>
+                                          <span
+                                              class="block text-sm leading-tight truncate"
+                                              :class="part.duration ? 'font-semibold text-gray-900' : 'text-gray-300 font-medium select-none'"
+                                          >
+                                              {{ part.duration || '— Elegir —' }}
+                                          </span>
+                                      </button>
                                     </div>
 
                                     <!-- Slots -->
@@ -661,8 +740,44 @@ function canRemoveFrom(sectionKey) {
     return removableSections.has(sectionKey);
 }
 
+// Formato existente en la BD: "1 min." / "10 mins."
+const DURATIONS = [1, 2, 3, 4, 5, 10, 15, 20, 30].map(n => n === 1 ? '1 min.' : `${n} mins.`);
+
+const durationPicker = ref({ open: false, sheet: false, weekId: null, partId: null, current: '', x: 0, y: 0 });
+
+// Keep an off-list value (some rows hold "3 min.") selectable instead of silently dropping it
+const durationOptions = computed(() => {
+    const current = durationPicker.value.current;
+    return current && !DURATIONS.includes(current) ? [current, ...DURATIONS] : DURATIONS;
+});
+
+function isActiveDurationPicker(partId) {
+    return durationPicker.value.open && durationPicker.value.partId === partId;
+}
+
+function openDurationPicker(event, week, part) {
+    const sheet = window.innerWidth < 640;
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    let x = Math.min(rect.left, window.innerWidth - 208);
+    let y = rect.bottom + 6;
+    if (y + 300 > window.innerHeight - 8) y = Math.max(8, rect.top - 306);
+
+    durationPicker.value = {
+        open: true, sheet, weekId: week.id, partId: part.id,
+        current: part.duration || '', x, y,
+    };
+}
+
+function pickDuration(value) {
+    const { weekId, partId } = durationPicker.value;
+    const { week, part } = findPart(weekId, partId);
+    durationPicker.value.open = false;
+    if (part) updatePart(week, part, { duration: value });
+}
+
 // Duración es opcional — oculta por defecto para que el título use todo el ancho
-const showDuration = ref(localStorage.getItem('meetings.showDuration') === '1');
+const showDuration = ref(localStorage.getItem('meetings.showDuration') !== '0');
 
 function toggleDuration() {
     showDuration.value = !showDuration.value;
