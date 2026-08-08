@@ -455,21 +455,15 @@
                                       <button
                                           v-if="showDuration && !isFixedSection(sectionKey)"
                                           type="button"
-                                          class="mt-1.5 w-32 sm:w-40 min-h-[48px] sm:min-h-0 text-left rounded-lg border px-3 py-1.5 transition-colors focus:outline-none"
+                                          class="mt-1 w-24 text-left text-xs rounded-md border px-2 py-1 transition-colors focus:outline-none truncate"
                                           :class="isActiveDurationPicker(part.id)
-                                              ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50'
-                                              : 'bg-white sm:bg-transparent border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30'"
+                                              ? 'border-indigo-300 ring-2 ring-indigo-100 bg-indigo-50/50 text-gray-900'
+                                              : part.duration
+                                                  ? 'bg-white sm:bg-transparent border-gray-200 hover:border-indigo-200 text-gray-500'
+                                                  : 'bg-white sm:bg-transparent border-gray-200 hover:border-indigo-200 text-gray-300'"
                                           @click="$event => openDurationPicker($event, week, part)"
                                       >
-                                          <span class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">
-                                              Duración
-                                          </span>
-                                          <span
-                                              class="block text-sm leading-tight truncate"
-                                              :class="part.duration ? 'font-semibold text-gray-900' : 'text-gray-300 font-medium select-none'"
-                                          >
-                                              {{ part.duration || '— Elegir —' }}
-                                          </span>
+                                          {{ part.duration || 'Duración' }}
                                       </button>
                                     </div>
 
